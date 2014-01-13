@@ -1,0 +1,20 @@
+(ns clog.database)
+
+(defprotocol Database
+  (get-logfiles [this where])
+  (get-logfileentries [this where])
+  (get-first-logfileentry [this])
+  (get-last-logfileentry [this])
+  (get-logfileenty-datetimes-inserted-after [this start])
+  (get-last-index-run-datetime [this])
+  (get-cache-block [this where])
+  (count-logfileentries [this where])
+  (save-logfile! [this logfile])
+  (save-logfileentries! [this entries])
+  (save-index-run-at! [this datetime])
+  (save-cache-block! [this block])
+  (update-logfile! [this logfile])
+  (update-cache-block! [this block])
+  (delete-logfiles! [this where])
+  (delete-logfileentries! [this where]))
+

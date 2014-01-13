@@ -1,0 +1,30 @@
+div .render-step-chart {
+    border: 1px solid black;
+}
+
+.render-step-chart {
+    height: 300px;
+    width: 100%;
+}
+
+.overlay {
+  fill: none;
+  pointer-events: all;
+}
+
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.x.axis path {
+  display: none;
+}
