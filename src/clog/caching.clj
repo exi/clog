@@ -23,4 +23,4 @@
 
 (defn fetch-cache-blocks-for-range
   [start end]
-  (remove nil? (map #(get-cache-block config/db %) (get-cache-block-list-for-range start end))))
+  (get-cache-blocks config/db {:$or (get-cache-block-list-for-range start end)}))

@@ -7,8 +7,7 @@
             [clog.controller.index :as index]
             [clog.controller.statistics :as statistics]
             [clog.controller.logfile :as logfile]
-            [clog.controller.indexer :as indexer]
-            ))
+            [clog.controller.indexer :as indexer]))
 
 (defroutes app-routes
   index/routes

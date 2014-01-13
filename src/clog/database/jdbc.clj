@@ -42,37 +42,50 @@
 (def time_cache-table :time_cache)
 
 (defn where-merge
-  [acc [sql & v]]
+  [join-string acc [sql & v]]
   (if (empty? acc)
     (list* sql v)
     (let [[st & values] acc]
-      (list* (string/join " AND " [sql st]) (concat v values)))))
+      (list* (str "(" (string/join join-string [sql st]) ")") (concat v values)))))
 
-(defn key-pred-value-to-sql [k p v]
-  (case pred
-    :gteq [(str "(" qk " >= ?)") v]
-    :lt [(str "(" qk " < ?)") v]
-    :eq [(str "(" qk " = ?)") v]
+(def where-and-merge (partial where-merge " AND " ))
+(def where-or-merge (partial where-merge " OR " ))
+
+(defn key-predicate-value-to-sql [k predicate v]
+  (case predicate
+    :gteq [(str "(" k " >= ?)") v]
+    :lt [(str "(" k " < ?)") v]
+    :eq [(str "(" k " = ?)") v]
     "(1 = 1)"))
+
+(defn handle-multiple-predicates [k predicate-map]
+  (map (fn [[p v]] (key-predicate-value-to-sql k p v)) predicate-map))
+
+(declare handle-where-tree)
+(defn handle-or-list [db l]
+  (map (fn [tree] (handle-where-tree db tree)) l))
+
+(defn handle-where-tree-node [db k v]
+  (let [qk (quote-identifier db k)]
+    (if (map? v)
+      (reduce where-and-merge [] (handle-multiple-predicates qk v))
+      (if (= k :$or)
+        (reduce where-or-merge [] (handle-or-list db v))
+        [(str "(" qk " = ?)") v]))))
+
+(defn handle-where-tree [db tree]
+  (reduce where-and-merge [] (map (fn [[k v]] (handle-where-tree-node db k v)) tree)) )
+
+(defn where-tree-to-sql-list
+  [db where]
+  (handle-where-tree db where))
 
 (defn where-to-sql
   [db where & {:keys [with-where] :or {with-where true}}]
-  (let [w (reduce
-            where-merge
-            []
-            (map
-              (fn [[k v]]
-                (let [qk (quote-identifier db k)]
-                  (if (map? v)
-                    (reduce
-                      where-merge
-                      []
-                      (map (fn [[pred v]] (key-pred-value-to-sql qk pred v)) v))
-                    [(str "(" qk " = ?)") v])))
-              where))]
-    (if (empty? w)
+  (let [where-list (where-tree-to-sql-list db where)]
+    (if (empty? where-list)
       {:sql "" :params []}
-      {:sql (str (if with-where "WHERE " "") (first w)) :params (rest w)})))
+      {:sql (str (if with-where "WHERE " "") (first where-list)) :params (rest where-list)})))
 
 (defrecord JDBCDatabase [db]
   Database
@@ -139,16 +152,15 @@
                                       " order by "
                                       (quote-identifier db :datetime)
                                       " DESC limit 1")]))))
-  (get-cache-block [this where]
+  (get-cache-blocks [this where]
     (let [w (where-to-sql db where)]
-      (first (jdbc/query
-               @db
-               (vec (list*
-                      (str "select * from " (quote-identifier db time_cache-table)
-                           " "
-                           (:sql w)
-                           " limit 1")
-                      (:params w)))))))
+      (jdbc/query
+        db
+        (vec (list*
+               (str "select * from " (quote-identifier db time_cache-table)
+                    " "
+                    (:sql w))
+               (:params w))))))
   (save-logfile! [this logfile]
     (jdbc/insert! db logfile-table logfile :entities #(quote-identifier db %)))
   (save-logfileentries! [this entries]

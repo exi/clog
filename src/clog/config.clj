@@ -17,4 +17,4 @@
                       :user "root"
                       :password "root"}))
 
-(def cache-resolutions (list* 1 (map #(int (* 1000 (Math/pow 2 %))) (range 13)))) ;must be sorted ASC
+(def cache-resolutions (vec (map #(int (* 1000 (Math/pow 4 %))) (range 7)))) ;must be sorted ASC
