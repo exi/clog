@@ -2,6 +2,8 @@
   (:require [clj-time.core :as jtime]
             [clj-time.coerce :as coerce]
             [clog.config :as config]
+            [clog.data_reducer.raw :as rawreducer]
+            [clog.data_reducer.cached :as cachedreducer]
             [clog.models.statistics.range :as range-model])
   (:use clog.database))
 
@@ -40,13 +42,13 @@
     {:start start 
      :range (:range block-spec)
      :hits (:value (first (:items (range-model/calculate-date-range-data
-                                    range-model/reduce-hit-data
+                                    rawreducer/hit
                                     start
                                     end
                                     1
                                     records))))
      :processtime (:value (first (:items (range-model/calculate-date-range-data
-                                           range-model/reduce-processtime-data
+                                           rawreducer/processtime
                                            start
                                            end
                                            1
@@ -61,8 +63,8 @@
                                             :range (get-lower-range (:range block-spec))})]
     {:start start
      :range (:range block-spec)
-     :hits (range-model/hits-block-reducer blocks)
-     :processtime (range-model/processtime-block-reducer blocks)}))
+     :hits (cachedreducer/hit blocks)
+     :processtime (cachedreducer/processtime blocks)}))
 
 (defn regenerate-cache-block
   [block-spec]
@@ -81,17 +83,23 @@
         blocks-to-update (generate-block-update-list changed-datetimes)]
     (dorun (pmap regenerate-cache-block blocks-to-update))))
 
-(defn start []
-  (let [start-time (coerce/to-long (jtime/now))
-        handle (atom {:stop false
-                      :last-index (get-last-index-run-datetime config/db)})]
-    (println "start indexing")
+(defn run [handle]
+  (let [start-time (coerce/to-long (jtime/now))]
     (index-changes handle)
-    (println (str "indexing done in " (long (/ (- (coerce/to-long (jtime/now)) start-time) 1000)) "s"))
     (save-index-run-at! config/db start-time)
-    (swap! handle #(assoc % :last-index start-time))
-    (println "index run saved")
+    (swap! handle #(assoc % :last-index start-time))))
+
+(defn setup []
+  (let [handle (atom {:stop false
+                      :last-index (get-last-index-run-datetime config/db)})]
+    (future
+      (while (false? (:stop @handle))
+        (Thread/sleep 10000)
+        (run handle)))
     handle))
+
+(defn start []
+  (setup))
 
 (defn stop [h]
   (swap! h #(assoc % :stop true)))

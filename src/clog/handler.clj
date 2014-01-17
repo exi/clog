@@ -7,13 +7,14 @@
             [clog.controller.index :as index]
             [clog.controller.statistics :as statistics]
             [clog.controller.logfile :as logfile]
-            [clog.controller.indexer :as indexer]))
+            [clog.controller.indexer :as indexer-controller]
+            [clog.indexer :as indexer]))
 
 (defroutes app-routes
   index/routes
   statistics/routes
   logfile/routes
-  indexer/routes
+  indexer-controller/routes
   (route/resources "/")
   (route/not-found (layout/four-oh-four)))
 
@@ -21,6 +22,7 @@
    (handler/site app-routes))
 
 (defn start []
+  (indexer/start)
   (jetty/run-jetty app {:port 3000 :join? false}))
 
 (defn stop [s]

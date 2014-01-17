@@ -2,6 +2,7 @@
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
   :dependencies [[org.clojure/clojure "1.6.0-alpha2"]
+                 [org.clojure/core.async "0.1.267.0-0d7780-alpha"]
                  [compojure "1.1.6"]
                  [ring/ring-jetty-adapter "1.2.0"]
                  [ring/ring-core "1.2.0"]

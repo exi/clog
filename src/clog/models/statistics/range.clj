@@ -3,6 +3,8 @@
             [clj-time.core :as jtime]
             [clj-time.coerce :as coerce]
             [clog.caching :as caching]
+            [clog.data_reducer.raw :as rawreducer]
+            [clog.data_reducer.cached :as cachedreducer]
             )
   (:use [clog.database]))
 
@@ -28,25 +30,6 @@
                  [])
          ((fn [recs] {:start step-start :end step-end :items recs})))))
 
-(defn reduce-hit-data
-  [part]
-  (count part))
-
-(defn reduce-processtime-data
-  ([part]
-   (let [c (count part)]
-     (if (pos? c)
-       (/
-        (reduce
-          (fn [acc item]
-            (+ acc (if-let [pt (:processtime item)]
-                     pt
-                     0)))
-          0
-          part)
-        c)
-       0))))
-
 (defn calculate-cached-range-data
   [block-reducer start end block-lists]
   {:start start
@@ -56,28 +39,6 @@
               {:date (:start step)
                :value (block-reducer (:blocks step)) })
             block-lists)})
-
-(defn hits-block-reducer
-  [blocks]
-  (reduce
-    (fn [acc b] (+ acc (:hits b)))
-    0
-    blocks))
-
-(defn processtime-block-reducer
-  [blocks]
-  (:avg-processtime (reduce
-                      (fn [acc b]
-                        (let [combined-hits (+ (:hits acc) (:hits b))]
-                          (if (> combined-hits 0)
-                            (assoc acc
-                                   :avg-processtime (/ (+ (* (:hits acc) (:avg-processtime acc))
-                                                          (* (:hits b) (:processtime b)))
-                                                       combined-hits)
-                                   :hits combined-hits)
-                            acc)))
-                      {:avg-processtime 0 :hits 0}
-                      blocks)))
 
 (defn align-to-cache-resolution
   [value]
@@ -117,6 +78,6 @@
       :end (delay end)
       :steps (delay steps)
       :hits (delay (count-logfileentries config/db bounds))
-      :hit-data (delay (calculate-cached-range-data hits-block-reducer start end @cached-blocks))
-      :processtime-data (delay (calculate-cached-range-data processtime-block-reducer start end @cached-blocks))})))
+      :hit-data (delay (calculate-cached-range-data cachedreducer/hit start end @cached-blocks))
+      :processtime-data (delay (calculate-cached-range-data cachedreducer/processtime start end @cached-blocks))})))
 
