@@ -1,4 +1,4 @@
-(ns clog.indexer
+(ns clog.services.indexer
   (:require [clj-time.core :as jtime]
             [clj-time.coerce :as coerce]
             [clog.config :as config]
@@ -41,18 +41,8 @@
                                                           :lt end}})]
     {:start start 
      :range (:range block-spec)
-     :hits (:value (first (:items (range-model/calculate-date-range-data
-                                    rawreducer/hit
-                                    start
-                                    end
-                                    1
-                                    records))))
-     :processtime (:value (first (:items (range-model/calculate-date-range-data
-                                           rawreducer/processtime
-                                           start
-                                           end
-                                           1
-                                           records))))}))
+     :hits (rawreducer/hit records)
+     :processtime (rawreducer/processtime records)}))
 
 (defn regenerate-cache-block-from-cached-data
   [block-spec]
@@ -94,12 +84,19 @@
                       :last-index (get-last-index-run-datetime config/db)})]
     (future
       (while (false? (:stop @handle))
-        (Thread/sleep 10000)
-        (run handle)))
+        (run handle)
+        (Thread/sleep 10000)))
+    (println "indexer setup done")
     handle))
 
-(defn start []
-  (setup))
+(defprotocol IndexService
+  (stop [this]))
 
-(defn stop [h]
-  (swap! h #(assoc % :stop true)))
+(defrecord Indexer [handle]
+  IndexService
+  (stop [this] 
+    (println "indexer stopping")
+    (swap! handle #(assoc % :stop true))))
+
+(defn create []
+  (Indexer. (setup)))

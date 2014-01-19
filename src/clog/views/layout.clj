@@ -30,7 +30,7 @@
        [:li
         [:a {:href "/"} "Logs"]]
        [:li
-        [:a {:href "/statistics"} "Statistics"]]]]]
+        [:a {:href "/statistics/overview"} "Statistics"]]]]]
     [:div body]
     ]))
 
