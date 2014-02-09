@@ -85,7 +85,9 @@
                       :last-index (get-last-index-run-datetime config/db)})]
     (future
       (while (false? (:stop @handle))
-        (run handle)
+        (try
+          (run handle)
+          (catch Exception e (println (str "Indexer caught: " (.getMessage e)))))
         (Thread/sleep 10000)))
     (println "indexer setup done, last index at" (:last-index @handle))
     handle))
