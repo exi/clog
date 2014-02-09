@@ -1,12 +1,14 @@
 (ns clog.models.logfiles
-  (:require [clog.config :as config]
+  (:require [clj-time.core :as jtime]
+            [clj-time.coerce :as coerce]
+            [clog.config :as config]
             [clog.models.logfile :as logfile]
             [clojure.java.io :as io])
   (:use clog.database))
 
 (defn all
   []
-  (sort (fn [a b] (< (:id a) (:id b))) (get-logfiles config/db {})))
+  (get-logfiles config/db {}))
 
 (defn import-from-dir
   [dirname]
@@ -16,4 +18,9 @@
 
 (defn scan-all
   []
-  (doseq [lf (get-logfiles config/db {})] (logfile/scan! (:id lf)) (println "scanned " (:path lf))))
+  (let [starttime (coerce/to-long (jtime/now))]
+    (doseq [lf (get-logfiles config/db {})] (logfile/scan! (:id lf)) (println "scanned " (:path lf)))
+    (println
+      "scan took"
+      (long (/ (- (coerce/to-long (jtime/now)) starttime) 1000))
+      "seconds")))

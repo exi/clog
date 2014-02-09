@@ -130,7 +130,7 @@
     (first (jdbc/query db [(str "select * from "
                                 (quote-identifier db logfileentries-table)
                                 " order by datetime DESC limit 1")])))
-  (get-logfileenty-datetimes-inserted-after [this start]
+  (get-logfileentry-datetimes-inserted-after [this start]
     (map
       #(get % :datetime)
       (jdbc/query db [(str "select "

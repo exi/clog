@@ -1,7 +1,8 @@
 (defproject clog "0.1.0-SNAPSHOT"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
-  :dependencies [[org.clojure/clojure "1.6.0-alpha2"]
+  :dependencies [
+                 [org.clojure/clojure "1.6.0-alpha2"]
                  [org.clojure/core.async "0.1.267.0-0d7780-alpha"]
                  [compojure "1.1.6"]
                  [ring/ring-jetty-adapter "1.2.0"]
@@ -12,15 +13,22 @@
                  [named-re "1.0.0"]
                  [org.clojure/data.json "0.2.3"]
                  [hiccup "1.0.4"]
-                 [com.mchange/c3p0 "0.9.2.1"]]
+                 [john2x/repload "0.0.3"]
+                 [com.mchange/c3p0 "0.9.2.1"]
+                 [com.novemberain/monger "1.5.0"]
+                 ]
   :plugins [
             [lein-ring "0.8.8"]
             [lein-swank "1.4.5"]
             [lein-lesscss "1.2"]
             ]
+  :injections [
+               (require 'repload)
+               (require '[repload :refer [repload]])
+               ]
   :ring {:handler clog.handler/app}
   :main clog.handler
   :jvm-opts ["-Xmx10g" "-server"]
   :profiles {:dev {:dependencies [[javax.servlet/servlet-api "2.5"]
-                        [ring-serve "0.1.2"]
-                        [ring-mock "0.1.5"]]}})
+                                  [ring-serve "0.1.2"]
+                                  [ring-mock "0.1.5"]]}})

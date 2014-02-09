@@ -30,6 +30,6 @@
     (layout/error "No Path provided")))
 
 (defroutes routes
-  (GET ["/logfile/scan/:id" :id #"[0-9]+"] [id] (scan! (read-string id)))
-  (GET ["/logfile/delete/:id" :id #"[0-9]+"] [id] (delete! (read-string id)))
+  (GET ["/logfile/scan/:id" ] [id] (scan! id))
+  (GET ["/logfile/delete/:id" ] [id] (delete! id))
   (POST ["/logfile/add"] {{logfile-path :logfile-path} :params} (add! logfile-path)))

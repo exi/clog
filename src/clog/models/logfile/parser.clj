@@ -23,16 +23,19 @@
                               "\\s+\"(?<referrer>.*?)\"\\s+\"(?<useragent>.*?)\"\\s+\"(?<forwardedfor>.*?)\"\\s+(?<processtime>\\d+\\.\\d+)"))
 (def nintendo-timed_comb-log-format (str common-log-format
                               "\\s+\"(?<referrer>.*?)\"\\s+\"(?<useragent>.*?)\"\\s+(?<processtime>\\d+\\.\\d+)"))
-(def icecast2-log-format (str ncsa-extended-log-format
-                              "\\s+(?<sessiontime>\\S+)"))
 
 (def format-map {"common" common-log-format
                  "ncsa" ncsa-extended-log-format
                  "s3" s3-log-format
                  "parasoup" parasoup-log-format
                  "nintendo-timed" nintendo-timed-log-format
-                 "nintendo-timed_comb" nintendo-timed_comb-log-format
-                 "icecast2" icecast2-log-format})
+                 "nintendo-timed_comb" nintendo-timed_comb-log-format})
+
+(def pattern-map
+  (reduce
+    (fn [acc [k v]] (assoc acc k (re-pattern v)))
+    {}
+    format-map))
 
 (def datetime-formatter (timeformat/formatter "dd/MMM/yyyy:HH:mm:ss Z"))
 
@@ -42,15 +45,13 @@
 
 (defn parse-int
   [s]
-  (if (re-find #"^\d+$" s)
-    (read-string s)
-    nil))
+  (when (re-find #"^\d+$" s)
+    (read-string s)))
 
 (defn parse-float
   [s]
-  (if (re-find #"^\d+(|\.\d+)$" s)
-    (read-string s)
-    nil))
+  (when (re-find #"^\d+(|\.\d+)$" s)
+    (read-string s)))
 
 (def processor-map
   {:datetime parse-datetime
@@ -69,26 +70,27 @@
 
 (defn apply-processors
   [data]
-  (reduce (fn [acc [k v]]
-            (if (contains? processor-map k)
-              (assoc acc k ((get processor-map k) v))
-              acc))
-          data
-          data))
+  (reduce
+    (fn [acc [k v]]
+      (if (contains? processor-map k)
+        (assoc acc k ((get processor-map k) v))
+        acc))
+    data
+    data))
 
 (defn process
   [data]
   (when (and data (map? data))
     (-> data
+        (dissoc :0)
         (process-no-match)
         (apply-processors)
-        (process-no-match)
-        (dissoc :0))))
+        (process-no-match))))
 
 (defn parse-with-pattern
   [line pattern]
   (try
-    (process (re-find (re-pattern pattern) line))
+    (process (re-find pattern line))
     (catch Exception e nil)))
 
 (defn detect-format
@@ -99,13 +101,13 @@
                    (fn [a b]
                      (> (first a) (first b)))
                    (map
-                     (fn [f] [(count (parse-with-pattern line (get format-map f))) f])
-                     (keys format-map))))]
+                     (fn [f] [(count (parse-with-pattern line (get pattern-map f))) f])
+                     (keys pattern-map))))]
       (if (= 0 (first best))
         [nil nil]
         best))))
 
 (defn parse-line
   ([line line-format]
-   (when-let [pattern (get format-map line-format)]
+   (when-let [pattern (get pattern-map line-format)]
      (parse-with-pattern line pattern))))

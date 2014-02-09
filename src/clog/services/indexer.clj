@@ -69,15 +69,16 @@
 (defn index-changes
   [handle]
   (let [last-index (:last-index @handle)
-        changed-datetimes (get-logfileenty-datetimes-inserted-after config/db (if last-index last-index 0))
+        changed-datetimes (get-logfileentry-datetimes-inserted-after config/db (if last-index last-index 0))
         blocks-to-update (generate-block-update-list changed-datetimes)]
-    (dorun (pmap regenerate-cache-block blocks-to-update))))
+    (dorun (pmap regenerate-cache-block blocks-to-update))
+    (if (seq blocks-to-update) true false)))
 
 (defn run [handle]
   (let [start-time (coerce/to-long (jtime/now))]
-    (index-changes handle)
-    (save-index-run-at! config/db start-time)
-    (swap! handle #(assoc % :last-index start-time))))
+    (when (index-changes handle)
+      (save-index-run-at! config/db start-time)
+      (swap! handle #(assoc % :last-index start-time)))))
 
 (defn setup []
   (let [handle (atom {:stop false
@@ -86,7 +87,7 @@
       (while (false? (:stop @handle))
         (run handle)
         (Thread/sleep 10000)))
-    (println "indexer setup done")
+    (println "indexer setup done, last index at" (:last-index @handle))
     handle))
 
 (defprotocol IndexService

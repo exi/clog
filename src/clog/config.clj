@@ -1,5 +1,4 @@
 (ns clog.config
-  (:require [clog.database.memory :as memdb])
   (:require [clog.database.jdbc :as jdbc])
   )
 
@@ -10,7 +9,7 @@
 ;         :user "root"
 ;         :password "root"
 ;         })
-;(def db (memdb/create))
+;(def db (mongodb/create))
 (def db (jdbc/create {:classname "com.mysql.jdbc.Driver"
                       :subprotocol "mysql"
                       :subname "//127.0.0.1:3306/clog"

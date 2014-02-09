@@ -7,7 +7,7 @@
   (let [line-format (if line-format
                       line-format
                       (first (remove nil? (map parser/detect-format lines))))]
-    (println "detected " line-format)
+    (println "detected" line-format)
     (remove nil? (pmap #(parser/parse-line % line-format) lines)) ))
 
 (defn parse-file

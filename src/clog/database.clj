@@ -5,7 +5,7 @@
   (get-logfileentries [this where])
   (get-first-logfileentry [this])
   (get-last-logfileentry [this])
-  (get-logfileenty-datetimes-inserted-after [this start])
+  (get-logfileentry-datetimes-inserted-after [this start])
   (get-last-index-run-datetime [this])
   (get-cache-blocks [this where])
   (count-logfileentries [this where])

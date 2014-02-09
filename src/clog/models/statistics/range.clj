@@ -8,8 +8,7 @@
             )
   (:use [clog.database]))
 
-(defn find-global-start-and-end
-  []
+(defn find-global-start-and-end []
   (let [f (get-first-logfileentry config/db)
         l (get-last-logfileentry config/db)]
     (if (or (nil? f) (nil? l))
@@ -49,14 +48,14 @@
   (let [real-start (align-to-cache-resolution start)
         real-end (align-to-cache-resolution end)
         step-size (long (Math/ceil (/ (- end start) step-count)))
-        step-list (range step-count)
-        steps (map
-                (fn [s]
-                  (let [step-start (align-to-cache-resolution (+ real-start (* step-size s)))
-                        step-end (align-to-cache-resolution (+ step-start step-size)) ]
-                    [step-start (align-to-cache-resolution (min real-end step-end))]))
-                step-list)]
-    steps))
+        step-list (range step-count)]
+    (map
+      (fn [s]
+        (let [step-start (align-to-cache-resolution (+ real-start
+                                                       (* step-size s)))
+              step-end (align-to-cache-resolution (+ step-start step-size))]
+          [step-start (align-to-cache-resolution (min real-end step-end))]))
+      step-list)))
 
 (defn get-stepped-block-lists-for-range
   [start end step-count]
@@ -68,7 +67,7 @@
 
 (defn analyse
   ([] (apply analyse (find-global-start-and-end)))
-  ([start end] (analyse start end 800))
+  ([start end] (analyse start end 1))
   ([start end steps]
    (let [end (dec end)
          bounds {:datetime {:gteq start :lt end}}
